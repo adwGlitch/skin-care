@@ -38,4 +38,26 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
+# next-env.d.ts
 next-env.d.ts
+
+# =========================
+# AI / ML Subsystem Ignore Rules
+# =========================
+
+# Dataset
+/ai/dataset/raw/
+/ai/dataset/processed/
+/ai/dataset/splits/
+
+# Models & Checkpoints
+/ai/models/*.pt
+/ai/models/*.pth
+
+# Results & Visualizations
+/ai/results/
+
+# Python Cache
+__pycache__/
+*.pyc
+*.pyo
