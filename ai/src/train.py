@@ -18,6 +18,7 @@ except ImportError:
 # Config
 DATASET_DIR = os.path.join(os.path.dirname(__file__), "..", "dataset")
 SPLITS_DIR = os.path.join(DATASET_DIR, "splits")
+PROCESSED_DIR = os.path.join(DATASET_DIR, "processed")
 MODELS_DIR = os.path.join(os.path.dirname(__file__), "..", "models")
 RESULTS_DIR = os.path.join(os.path.dirname(__file__), "..", "results")
 
@@ -48,7 +49,7 @@ def get_loss_function(loss_type, device):
         return nn.CrossEntropyLoss()
         
     # Load class weights
-    weights_path = os.path.join(SPLITS_DIR, "class_weights.json")
+    weights_path = os.path.join(PROCESSED_DIR, "class_weights.json")
     if not os.path.exists(weights_path):
         raise FileNotFoundError(f"Missing {weights_path}. Run prepare_data.py first.")
         
@@ -81,8 +82,10 @@ def train():
     train_dataset = HAM10000Dataset(train_df, transform=get_transforms(is_train=True))
     val_dataset = HAM10000Dataset(val_df, transform=get_transforms(is_train=False))
 
-    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=4, pin_memory=True)
-    val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=4, pin_memory=True)
+    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=0, pin_memory=False)
+    val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=0, pin_memory=False)
+    
+    print(f"Diagnostic -> Device: {device}, num_workers: 0, pin_memory: False, batch_size: {BATCH_SIZE}")
 
     # 2. Initialize Model
     model = DermaAI_MobileNetV3(num_classes=7, use_attention=USE_ATTENTION, pretrained=True)
@@ -95,7 +98,7 @@ def train():
     # 3. Setup Optimizer, Loss, Scheduler
     criterion = get_loss_function(LOSS_TYPE, device)
     optimizer = optim.AdamW(filter(lambda p: p.requires_grad, model.parameters()), lr=LEARNING_RATE, weight_decay=1e-4)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3, verbose=True)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3)
 
     # 4. Training Loop
     best_val_loss = float('inf')
@@ -115,7 +118,7 @@ def train():
                 param.requires_grad = True
             # Re-init optimizer with smaller LR for fine-tuning
             optimizer = optim.AdamW(model.parameters(), lr=LEARNING_RATE * 0.1, weight_decay=1e-4)
-            scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3, verbose=True)
+            scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3)
 
         pbar = tqdm(train_loader, desc=f"Epoch {epoch+1}/{EPOCHS} [Train]")
         for inputs, targets in pbar:
