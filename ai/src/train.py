@@ -87,6 +87,28 @@ def train():
     
     print(f"Diagnostic -> Device: {device}, num_workers: 0, pin_memory: False, batch_size: {BATCH_SIZE}")
 
+    # ── SMOKE TEST ─────────────────────────────────────────────────────────────
+    # Fetch one batch before the full training run to catch DataLoader / dataset
+    # errors early. Aborts with a clear message if anything fails.
+    print("\n[SMOKE TEST] Fetching one batch from train_loader ...")
+    try:
+        smoke_imgs, smoke_labels = next(iter(train_loader))
+        print(f"[SMOKE TEST] Image tensor shape : {smoke_imgs.shape}")    # expect [B, 3, 224, 224]
+        print(f"[SMOKE TEST] Label tensor shape : {smoke_labels.shape}")  # expect [B]
+        print(f"[SMOKE TEST] Label values       : {smoke_labels.tolist()}")
+        # Confirm the batch can be moved/used on the target device (CPU here)
+        smoke_imgs_dev   = smoke_imgs.to(device)
+        smoke_labels_dev = smoke_labels.to(device)
+        print(f"[SMOKE TEST] Batch transferred to {device} successfully.")
+        print("[SMOKE TEST] PASSED — proceeding to full training.\n")
+        del smoke_imgs, smoke_labels, smoke_imgs_dev, smoke_labels_dev
+    except Exception as smoke_err:
+        import traceback
+        print("\n[SMOKE TEST] FAILED — aborting. Full traceback:")
+        traceback.print_exc()
+        raise SystemExit(1) from smoke_err
+    # ── END SMOKE TEST ─────────────────────────────────────────────────────────
+
     # 2. Initialize Model
     model = DermaAI_MobileNetV3(num_classes=7, use_attention=USE_ATTENTION, pretrained=True)
     model.to(device)
