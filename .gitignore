@@ -45,14 +45,22 @@ next-env.d.ts
 # AI / ML Subsystem Ignore Rules
 # =========================
 
-# Dataset
+# Virtual environment
+/ai/.venv/
+
+# Dataset (raw images, splits, processed artifacts, external data, segmentations)
 /ai/dataset/raw/
 /ai/dataset/processed/
 /ai/dataset/splits/
+/ai/dataset/external_test/
+/ai/dataset/segmentations/
+/ai/dataset/synthetic_smoke_test/
+/ai/dataset/HAM10000_metadata.csv
 
 # Models & Checkpoints
 /ai/models/*.pt
 /ai/models/*.pth
+/ai/models/synthetic_smoke_test/
 
 # Results & Visualizations
 /ai/results/
@@ -61,3 +69,4 @@ next-env.d.ts
 __pycache__/
 *.pyc
 *.pyo
+*.pyd
